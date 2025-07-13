@@ -3,12 +3,15 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET,
-     { expiresIn: "7d" });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
 const registerUser = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
+
+  if (!firstName || !lastName || !email || !password) {
+    return res.status(400).json({ message: "Please fill all fields" });
+  }
 
   try {
     const exists = await User.findOne({ email });
@@ -25,11 +28,11 @@ const registerUser = async (req, res) => {
     });
 
     res.status(201).json({
-      _id: user.id,
+      _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      token: generateToken(user.id),
+      token: generateToken(user._id),
     });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -39,6 +42,10 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ message: "Please fill all fields" });
+  }
+
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
@@ -47,17 +54,16 @@ const loginUser = async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     res.status(200).json({
-      _id: user.id,
+      _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      token: generateToken(user.id),
+      token: generateToken(user._id),
     });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 module.exports = {
   registerUser,
